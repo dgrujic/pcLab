@@ -79,14 +79,22 @@ def gds_pin2viaport (input_filename, width=10, port_layer_start=201, add_frame=T
                 port_layer = port_layer_start+n
                 port_dict[label.text]=[port_layer, xlabel, ylabel]
                 # draw a line on port_layer with width specified as a parameter in call to this function
-                if position in [PORT_SIDE_LEFT, PORT_SIDE_RIGHT]:
+                if position in [PORT_SIDE_LEFT]:
                     # draw line in y direction
-                    p1 = (xlabel-DELTA/2, ylabel-width/2)
-                    p2 = (xlabel+DELTA/2, ylabel+width/2)
-                else:
-                    p1 = (xlabel-width/2, ylabel-DELTA/2)
-                    p2 = (xlabel+width/2, ylabel+DELTA/2)
+                    p1 = (xlabel, ylabel-width/2)
+                    p2 = (xlabel+DELTA, ylabel+width/2)
+                elif position in [PORT_SIDE_RIGHT]:
+                    # draw line in y direction
+                    p1 = (xlabel, ylabel-width/2)
+                    p2 = (xlabel-DELTA, ylabel+width/2)
+                elif position in [PORT_SIDE_TOP]:
                     # draw line in x direction
+                    p1 = (xlabel-width/2, ylabel)
+                    p2 = (xlabel+width/2, ylabel-DELTA)
+                else:
+                    # draw line in x direction
+                    p1 = (xlabel-width/2, ylabel)
+                    p2 = (xlabel+width/2, ylabel+DELTA)
                 rect = gdspy.Rectangle(p1, p2, layer=port_layer, datatype=0)
                 cell.add(rect)
 
