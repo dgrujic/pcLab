@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from pclab.pclGeom import *
+import math
 
 ###############################################################################
 #
@@ -154,8 +155,14 @@ class inductorSE(geomBase):
             
         else:
             self._genSubstrateContact = False
-    
-        # TODO: Include dimension check
+        
+        # Dimension check: return False if diameter is too small
+        return r>=self.get_min_diameter()
+
+
+    def get_min_diameter(self):
+        return SE_get_min_diameter(self)
+
 
     def _genOct(self):
         """
@@ -910,7 +917,14 @@ class inductorSym(geomBase):
         else:
             self._genSubstrateContact = False
                     
-        # TODO: Include dimension check
+        # Dimension check: return False if diameter is too small
+        return self._r >= self.get_min_diameter()
+
+
+    def get_min_diameter(self):
+        return sym_get_min_diameter(self)
+    
+    
 
     def genGeometry(self):
         """
@@ -1266,8 +1280,11 @@ class inductorSymCT(geomBase):
         else:
             self._genSubstrateContact = False
           
-        # TODO: Include dimension check
+        # Dimension check: return False if diameter is too small
+        return self._r >= self.get_min_diameter()
 
+    def get_min_diameter(self):
+        return sym_get_min_diameter(self)
 
     def genGeometry(self):
         """
@@ -1525,3 +1542,72 @@ class inductorSymCT(geomBase):
         lib.add(balCell)
         lib.write_gds(fileName)
 
+
+
+def sym_get_min_diameter(self):
+# Calculate the minimum possible diameter for symmetric octagon and rect layout
+    N = self._n
+    w = self._w
+    s = self._s
+
+    crossover_size = 3*w + 2*s
+
+    viaName  = self._viaLayer
+    viaEnc   = self._tech.getDRCRule(viaName, "viaEnc")
+    viaSize  = self._tech.getDRCRule(viaName, "viaSize")
+    viaSpace = self._tech.getDRCRule(viaName, "viaSpace")
+
+    # make sure we don't create a single via 
+    size_for_two_vias =  2*viaSize + viaSpace + 2*viaEnc
+    overlap_size = w
+    if w < size_for_two_vias:
+        overlap_size = 1.1*size_for_two_vias
+
+    # there is a minimum crossover width that must be respected
+    if self._geomType == "octagon":
+        min_crossover_size = (2*s+w)*(math.sqrt(2)-1) + (s+w) +  2*overlap_size
+    
+        if crossover_size < min_crossover_size:
+            crossover_size = min_crossover_size
+
+        if N>1:
+            Di_min = crossover_size * (1 + math.sqrt(2))
+        else:
+            Di_min = 2*(w + s) *(1 + math.sqrt(2))  # for single turn inductor     
+    else: 
+        # rect
+        crossover_size = 3*w + 2*s
+        if N>1:
+            Di_min = crossover_size + w 
+        else:
+            Di_min = 4*w*(1 + math.sqrt(2))  # for single turn inductor
+
+
+    Do_min = (Di_min + 2*N*w + 2*(N-1)*s)
+    # round to 2 decimal digits
+    Do_min = math.ceil(100*Do_min)/100
+    return Do_min
+
+
+def SE_get_min_diameter(self):
+# Calculate the minimum possible diameter for single ended octagon and rect layout
+    N = self._n
+    w = self._w
+    s = self._s
+
+    N_frac, N_full = math.modf(N)
+    
+    if self._geomType == "octagon":
+        Di_min = 3*w+2*s 
+    else:    
+        Di_min = 2*w+s 
+
+    Do_min = (Di_min + (2*N_full+1)*w + 2*(N-1)*s)
+    if self._geomType == "octagon" and N_frac > 0.5:
+        Do_min = Do_min + 3.5*w + 4*s
+    else:    
+        Do_min = Do_min + w + s
+    
+    # round to 2 decimal digits
+    Do_min = math.ceil(100*Do_min)/100
+    return Do_min
