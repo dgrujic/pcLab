@@ -851,10 +851,15 @@ class inductorSym(geomBase):
         self._n = n
         self._signalLayer = signalLayer
         self._underPassLayer = underPassLayer
+
         if connectLen is None:
             self._connectLen = 2*w
+        else:
+            self._connectLen = connectLen
         if connectSpace is None:
             self._connectSpace = w
+        else:
+            self._connectSpace = connectSpace
         if (geomType != "rect") and (geomType != "octagon"):
             print("WARNING:inductorSym::setupGeometry: Unknown geometry type. Setting to octagonal.")
             self._geomType = "octagon"
